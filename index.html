@@ -1,1 +1,115 @@
-Hello World
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.bar {
+  fill: steelblue;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.legend line {
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.italic{ 
+  font-style: italic; 
+}
+
+</style>
+
+<body>
+  <p>Inspired by reading the first chapter in Enrico Coen's <span class="italic">Cells to Civilizations</span>I decided to code my interpretation of the algorithm he describes for using black and white marbles to characterize the properties of population drift. The algorithm itself was pretty straight forward (code and commentary below) and the resulting sequences of numbers conformed to his characterization, with each variation converging to an all black or all white population after many tens or a few hundreds of cycles.</p>
+</body>
+
+<script src="d3.min.js" charset="utf-8"></script>
+<script src="underscore-min.js"></script>
+
+<script src="pop_drift_lab_8x.js"></script>
+
+<script>
+console.log("TOP");
+
+  var data = run();
+
+  var margin = {top: 20, right: 100, bottom: 30, left: 10},
+      width = (data.length * 21) - margin.left - margin.right,
+      height = 300 - margin.top - margin.bottom;
+
+  var x = d3.scale.ordinal()
+      .rangeRoundBands([0, width], .1);
+
+  var y = d3.scale.linear()
+      .rangeRound([height, 0]);
+
+  var color = d3.scale.ordinal()
+      .range(["#9999ff", "#ff9933"]);
+
+  var xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom");
+
+  var yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left")
+      .tickFormat(d3.format(".0%"));
+
+  var svg = d3.select("body").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  color.domain(["Blue", "Orange"]);
+
+  data.forEach(function(d) {
+    var y0 = 0;
+    d.colors = color.domain().map(function(name) { 
+      return {name: name}; 
+    });
+    d.colors.forEach(function(d2, i) {
+      d2.y0 = y0;
+      y0 = d[i+1]; 
+      d2.y1 = y0 + d2.y0; 
+    });
+  });
+
+  x.domain(data.map(function(d) {
+    return d[0]; 
+  }));
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  var cycle = svg.selectAll(".cycle")
+      .data(data)
+    .enter().append("g")
+      .attr("class", "cycle")
+      .attr("transform", function(d) { return "translate(" + x(d[0]) + ",0)"; });
+
+  cycle.selectAll("rect")
+      .data(function(d) { return d.colors; })
+    .enter().append("rect")
+      .attr("width", x.rangeBand())
+      .attr("y", function(d) { return y(d.y1); })
+      .attr("height", function(d) { return y(d.y0) - y(d.y1); })
+      .style("fill", function(d) { return color(d.name); });
+
+
+</script>
